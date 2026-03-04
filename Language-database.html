@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>리전별 언어 사용현황 데이터베이스</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    const LANGUAGES = [
+      { id:"en", name:"영어", nativeName:"English", family:"인도유럽어족 / 게르만어파", totalSpeakers:1520, nativeSpeakers:380, officialCountries:67, totalCountries:186, regions:["아메리카","유럽","아시아태평양","아프리카"], topCountries:[{country:"미국",speakers:285,note:"원어민"},{country:"인도",speakers:130,note:"제2언어 포함"},{country:"파키스탄",speakers:110,note:"제2언어 포함"},{country:"나이지리아",speakers:90,note:"제2언어 포함"},{country:"필리핀",speakers:90,note:"제2언어 포함"},{country:"영국",speakers:67,note:"원어민"},{country:"캐나다",speakers:30,note:"원어민"},{country:"호주",speakers:22,note:"원어민"}], sources:[{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"제2언어 화자 비율이 가장 높음 (전체의 약 75%). UN 공용어 6개 중 1위.", color:"#3B82F6" },
+      { id:"zh", name:"중국어", nativeName:"中文 (普通话)", family:"중국티베트어족 / 중국어파", totalSpeakers:1140, nativeSpeakers:941, officialCountries:4, totalCountries:83, regions:["동아시아","동남아시아"], topCountries:[{country:"중국",speakers:940,note:"원어민(보통화)"},{country:"대만",speakers:23,note:"원어민"},{country:"말레이시아",speakers:6,note:"원어민"},{country:"싱가포르",speakers:2,note:"원어민"},{country:"미국",speakers:3,note:"화교 포함"}], sources:[{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"원어민 수 기준 세계 1위. 보통화(만다린) 기준이며 광둥어·민남어 등 포함 시 더 많음.", color:"#EF4444" },
+      { id:"es", name:"스페인어", nativeName:"Español", family:"인도유럽어족 / 로망스어파", totalSpeakers:636, nativeSpeakers:519, officialCountries:21, totalCountries:44, regions:["라틴아메리카","북아메리카","유럽","아프리카"], topCountries:[{country:"멕시코",speakers:132,note:"원어민"},{country:"미국",speakers:65.5,note:"원어민+제2언어"},{country:"콜롬비아",speakers:52,note:"원어민"},{country:"스페인",speakers:48,note:"원어민"},{country:"아르헨티나",speakers:46,note:"원어민"},{country:"페루",speakers:33,note:"원어민"},{country:"베네수엘라",speakers:32,note:"원어민"},{country:"칠레",speakers:19,note:"원어민"},{country:"에콰도르",speakers:18,note:"원어민"}], sources:[{name:"Instituto Cervantes — El español en el mundo 2025",url:"https://www.cervantes.es"},{name:"Instituto Cervantes — Anuario 2024",url:"https://cvc.cervantes.es/lengua/anuario"}], note:"원어민 수 기준 세계 2위. 2025년 처음으로 총 사용자 수가 영어를 추월.", color:"#F59E0B" },
+      { id:"ar", name:"아랍어", nativeName:"العربية", family:"아프로아시아어족 / 셈어파", totalSpeakers:422, nativeSpeakers:313, officialCountries:22, totalCountries:30, regions:["중동","북아프리카","동아프리카"], topCountries:[{country:"이집트",speakers:95,note:"원어민 (CAPMAS 2023)"},{country:"수단",speakers:46,note:"원어민+제2언어"},{country:"알제리",speakers:45,note:"원어민"},{country:"이라크",speakers:42,note:"원어민"},{country:"모로코",speakers:37,note:"원어민"},{country:"사우디아라비아",speakers:35,note:"원어민"},{country:"예멘",speakers:33,note:"원어민"},{country:"시리아",speakers:22,note:"원어민"},{country:"튀니지",speakers:12,note:"원어민"},{country:"UAE",speakers:10,note:"원어민"}], sources:[{name:"Arab League 통계 및 회원국 인구조사",url:"https://www.leagueofarabstates.net"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"},{name:"CAPMAS (이집트 통계청) 2023",url:"https://www.capmas.gov.eg"}], note:"이슬람 종교 언어로서 약 19억 무슬림에게 종교적 의미를 가짐. UN 공용어.", color:"#059669" },
+      { id:"fr", name:"프랑스어", nativeName:"Français", family:"인도유럽어족 / 로망스어파", totalSpeakers:321, nativeSpeakers:77, officialCountries:29, totalCountries:50, regions:["아프리카","유럽","아메리카","아시아태평양"], topCountries:[{country:"콩고민주공화국",speakers:90,note:"제2언어 주요국"},{country:"프랑스",speakers:68,note:"원어민"},{country:"알제리",speakers:45,note:"제2언어 포함"},{country:"코트디부아르",speakers:27,note:"제2언어"},{country:"카메룬",speakers:27,note:"제2언어"},{country:"마다가스카르",speakers:26,note:"제2언어"},{country:"모로코",speakers:13,note:"제2언어"},{country:"캐나다",speakers:10,note:"원어민(퀘벡 등)"},{country:"벨기에",speakers:5,note:"원어민"},{country:"스위스",speakers:2,note:"원어민(로망디 지역)"}], sources:[{name:"OIF — La langue française dans le monde 2022",url:"https://www.francophonie.org"},{name:"19th Francophonie Summit Press Kit (2024)",url:"https://francophonie2024.gouv.fr"}], note:"OIF 공식 보고서 기준 321백만 명. 2050년 약 7억 명 예상(OIF 전망). UN·EU 공용어.", color:"#8B5CF6" },
+      { id:"ru", name:"러시아어", nativeName:"Русский", family:"인도유럽어족 / 슬라브어파 (동슬라브어)", totalSpeakers:255, nativeSpeakers:147, officialCountries:4, totalCountries:18, regions:["동유럽","중앙아시아","서유럽"], topCountries:[{country:"러시아",speakers:144,note:"원어민"},{country:"우크라이나",speakers:30,note:"제2언어 포함"},{country:"카자흐스탄",speakers:13,note:"원어민+제2언어"},{country:"벨라루스",speakers:7,note:"원어민"},{country:"우즈베키스탄",speakers:7,note:"제2언어"},{country:"독일",speakers:3,note:"이주민 원어민"},{country:"라트비아",speakers:0.6,note:"원어민"},{country:"키르기스스탄",speakers:0.4,note:"공용어권"}], sources:[{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"},{name:"Rosstat (러시아 연방 통계청) 인구조사 기반",url:"https://rosstat.gov.ru"}], note:"구소련 전역에서 광범위하게 사용. UN 공용어. 공식 공용어: 러시아·벨라루스·카자흐스탄·키르기스스탄.", color:"#DC2626" },
+      { id:"pt", name:"포르투갈어", nativeName:"Português", family:"인도유럽어족 / 로망스어파", totalSpeakers:267, nativeSpeakers:236, officialCountries:9, totalCountries:13, regions:["남아메리카","아프리카","유럽","아시아"], topCountries:[{country:"브라질",speakers:215,note:"원어민 (IBGE 2022)"},{country:"앙골라",speakers:25,note:"원어민+제2언어"},{country:"포르투갈",speakers:10,note:"원어민"},{country:"모잠비크",speakers:6,note:"원어민+제2언어"},{country:"기니비사우",speakers:2,note:"제2언어"},{country:"적도기니",speakers:1.4,note:"공용어"},{country:"동티모르",speakers:1.3,note:"공용어"},{country:"카보베르데",speakers:0.5,note:"원어민"},{country:"상투메프린시페",speakers:0.2,note:"원어민"}], sources:[{name:"IBGE — Censo Demográfico 2022 (브라질 통계청)",url:"https://www.ibge.gov.br"},{name:"CPLP (포르투갈어권 공동체)",url:"https://www.cplp.org"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"전체 화자의 약 80%가 브라질에 집중. CPLP 가입국 9개국 기준 공식 언어. 원어민 기준 세계 5위.", color:"#10B981" },
+      { id:"de", name:"독일어", nativeName:"Deutsch", family:"인도유럽어족 / 게르만어파", totalSpeakers:134, nativeSpeakers:80, officialCountries:6, totalCountries:42, regions:["유럽","아메리카"], topCountries:[{country:"독일",speakers:76,note:"원어민"},{country:"오스트리아",speakers:7.5,note:"원어민"},{country:"스위스",speakers:5,note:"원어민"},{country:"러시아",speakers:2.1,note:"역사적 이주민"},{country:"미국",speakers:2,note:"독일계 이주민"},{country:"브라질",speakers:1,note:"원어민"},{country:"룩셈부르크",speakers:0.4,note:"원어민"},{country:"리히텐슈타인",speakers:0.04,note:"원어민"}], sources:[{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"},{name:"Goethe-Institut 공식 통계 (2024)",url:"https://www.goethe.de"},{name:"WorldData.info (July 2024 update)",url:"https://www.worlddata.info"}], note:"EU 내 원어민 수 기준 1위 언어. 공식 언어 국가: 독일·오스트리아·스위스·룩셈부르크·리히텐슈타인·벨기에(일부).", color:"#6B7280" },
+      { id:"ja", name:"일본어", nativeName:"日本語", family:"일본어족 (독립 어족)", totalSpeakers:125, nativeSpeakers:123, officialCountries:1, totalCountries:3, regions:["동아시아","북아메리카","남아메리카"], topCountries:[{country:"일본",speakers:123,note:"원어민 (총무성 통계국 2024)"},{country:"미국",speakers:0.5,note:"일계 이주민"},{country:"브라질",speakers:0.4,note:"일계 브라질인"},{country:"호주",speakers:0.1,note:"이주민+학습자"}], sources:[{name:"일본 총무성 통계국 — 인구 추계 2024.10.1 기준",url:"https://www.stat.go.jp/english"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"화자의 98% 이상이 일본 내 거주. 단일 국가 언어로는 세계 최고 수준의 집중도.", color:"#F97316" },
+      { id:"it", name:"이탈리아어", nativeName:"Italiano", family:"인도유럽어족 / 로망스어파", totalSpeakers:85, nativeSpeakers:65, officialCountries:4, totalCountries:16, regions:["유럽","아메리카"], topCountries:[{country:"이탈리아",speakers:60,note:"원어민 (ISTAT)"},{country:"아르헨티나",speakers:1.5,note:"이탈리아계 이주민"},{country:"미국",speakers:1,note:"이탈리아계 이주민"},{country:"스위스",speakers:0.7,note:"원어민(티치노 주)"},{country:"독일",speakers:0.6,note:"이탈리아계 이주민"},{country:"산마리노",speakers:0.03,note:"원어민"},{country:"바티칸",speakers:0.0008,note:"공용어"}], sources:[{name:"ISTAT (이탈리아 국립통계청) 인구조사 기반",url:"https://www.istat.it"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"공식 언어 국가: 이탈리아·스위스·산마리노·바티칸. EU 내 원어민 수 4위.", color:"#16A34A" },
+      { id:"tr", name:"터키어", nativeName:"Türkçe", family:"튀르크어족 / 오구즈어파", totalSpeakers:90, nativeSpeakers:84, officialCountries:2, totalCountries:9, regions:["서아시아","유럽"], topCountries:[{country:"튀르키예",speakers:82,note:"원어민 (TÜİK 2023)"},{country:"독일",speakers:3,note:"이주민 원어민"},{country:"불가리아",speakers:0.7,note:"소수민족 원어민"},{country:"북마케도니아",speakers:0.3,note:"소수민족"},{country:"오스트리아",speakers:0.3,note:"이주민"},{country:"키프로스",speakers:0.12,note:"공용어(북키프로스)"},{country:"그리스",speakers:0.1,note:"소수민족"}], sources:[{name:"TÜİK (튀르키예 통계청) 인구 추계 2023",url:"https://www.tuik.gov.tr"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"튀르크어족 중 가장 많은 화자 보유. 공식 언어 국가: 튀르키예·키프로스. 독일 내 최대 이민 언어군.", color:"#DC2626" },
+      { id:"pl", name:"폴란드어", nativeName:"Polski", family:"인도유럽어족 / 슬라브어파 (서슬라브어)", totalSpeakers:50, nativeSpeakers:44, officialCountries:2, totalCountries:11, regions:["유럽","북아메리카"], topCountries:[{country:"폴란드",speakers:38,note:"원어민 (GUS 2021)"},{country:"독일",speakers:2,note:"이주민 원어민"},{country:"미국",speakers:2,note:"폴란드계 이주민"},{country:"영국",speakers:1,note:"이주민 원어민"},{country:"캐나다",speakers:0.6,note:"이주민"},{country:"우크라이나",speakers:0.5,note:"역사적 소수민족"},{country:"프랑스",speakers:0.4,note:"이주민"}], sources:[{name:"GUS (폴란드 중앙통계청) — 국가인구주택총조사 2021",url:"https://stat.gov.pl"},{name:"Ethnologue 27판 (SIL International, 2024)",url:"https://www.ethnologue.com"}], note:"EU 공용어이자 폴란드 유일 공식 언어. 서슬라브어 중 가장 많은 화자 보유.", color:"#E11D48" },
+    ];
+
+    const REGION_COLORS = {"아메리카":"#3B82F6","라틴아메리카":"#8B5CF6","북아메리카":"#6366F1","유럽":"#10B981","동유럽":"#059669","서유럽":"#34D399","아시아태평양":"#F59E0B","동아시아":"#EF4444","동남아시아":"#F97316","서아시아":"#F59E0B","중동":"#D97706","아프리카":"#8B5CF6","북아프리카":"#7C3AED","동아프리카":"#6D28D9","남아메리카":"#2563EB","중앙아시아":"#0891B2","아시아":"#0EA5E9"};
+
+    const fmt = n => n>=100?`${Math.round(n)}M`:n>=10?`${n.toFixed(0)}M`:n>=1?`${n.toFixed(1)}M`:`${(n*1000).toFixed(0)}K`;
+
+    function LanguageCard({ lang, onClick, selected }) {
+      return (
+        <div onClick={()=>onClick(lang.id)} className="cursor-pointer rounded-xl border-2 transition-all p-4"
+          style={{borderColor:selected?lang.color:"#E5E7EB",background:selected?`${lang.color}10`:"white",boxShadow:selected?`0 0 0 2px ${lang.color}40`:"none"}}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{background:lang.color}}/>
+            <div>
+              <div className="font-bold text-gray-900">{lang.name}</div>
+              <div className="text-xs text-gray-500">{lang.nativeName}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-gray-50 rounded-lg p-2"><div className="text-gray-500">총 화자</div><div className="font-bold text-gray-800">{lang.totalSpeakers}백만+</div></div>
+            <div className="bg-gray-50 rounded-lg p-2"><div className="text-gray-500">원어민</div><div className="font-bold text-gray-800">{lang.nativeSpeakers}백만</div></div>
+          </div>
+          <div className="mt-2 text-xs text-gray-500">공식 언어 국가: <span className="font-semibold text-gray-700">{lang.officialCountries}개</span></div>
+        </div>
+      );
+    }
+
+    function DetailPanel({ lang }) {
+      const [tab, setTab] = useState("countries");
+      if (!lang) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">왼쪽 카드에서 언어를 선택하세요</div>;
+      return (
+        <div className="h-full overflow-y-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-4 h-4 rounded-full" style={{background:lang.color}}/>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{lang.name} <span className="text-gray-500 font-normal text-base">({lang.nativeName})</span></h2>
+              <div className="text-xs text-gray-500">{lang.family}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {[{label:"총 화자 수",value:`${lang.totalSpeakers}M+`,sub:"원어민+제2언어"},{label:"원어민 수",value:`${lang.nativeSpeakers}M`,sub:"모국어 화자"},{label:"공식 언어국",value:`${lang.officialCountries}개국`,sub:"공식/공동 공용어"},{label:"사용 국가",value:`${lang.totalCountries}개국+`,sub:"유의미한 화자 보유"}].map(({label,value,sub})=>(
+              <div key={label} className="bg-gray-50 rounded-xl p-3 text-center">
+                <div className="text-xs text-gray-500 mb-1">{label}</div>
+                <div className="font-bold text-gray-900 text-sm">{value}</div>
+                <div className="text-xs text-gray-400">{sub}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-gray-500 uppercase mb-2">주요 분포 리전</div>
+            <div className="flex flex-wrap gap-2">
+              {lang.regions.map(r=>(
+                <span key={r} className="text-xs px-2 py-0.5 rounded-full font-medium text-white" style={{background:REGION_COLORS[r]||"#6B7280"}}>{r}</span>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-1 mb-3 border-b border-gray-200">
+            {["countries","sources"].map(t=>(
+              <button key={t} onClick={()=>setTab(t)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-all"
+                style={{background:tab===t?lang.color:"transparent",color:tab===t?"white":"#6B7280"}}>
+                {t==="countries"?"국가별 화자 수":"데이터 출처"}
+              </button>
+            ))}
+          </div>
+          {tab==="countries" && (
+            <div className="space-y-1.5">
+              {lang.topCountries.map((c,i)=>{
+                const pct = Math.max(4,(c.speakers/lang.topCountries[0].speakers)*100);
+                return (
+                  <div key={c.country} className="flex items-center gap-2">
+                    <div className="w-4 text-xs text-gray-400 text-right">{i+1}</div>
+                    <div className="w-24 text-xs font-medium text-gray-700 flex-shrink-0">{c.country}</div>
+                    <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full flex items-center pl-2" style={{width:`${pct}%`,background:lang.color,opacity:0.8}}>
+                        <span className="text-white text-xs font-bold whitespace-nowrap">{fmt(c.speakers)}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 w-20 text-right flex-shrink-0">{c.note}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {tab==="sources" && (
+            <div className="space-y-3">
+              {lang.sources.map((s,i)=>(
+                <div key={i} className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-blue-800">📄 {s.name}</div>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:text-blue-700 underline mt-1 block">🔗 {s.url}</a>
+                </div>
+              ))}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="text-xs font-semibold text-yellow-800">⚠️ 데이터 해석 유의사항</div>
+                <div className="text-xs text-yellow-700 mt-1">{lang.note}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function SummaryTable({ langs, onSelect, selected }) {
+      const [sort, setSort] = useState({key:"totalSpeakers",dir:"desc"});
+      const sorted = useMemo(()=>[...langs].sort((a,b)=>sort.dir==="desc"?b[sort.key]-a[sort.key]:a[sort.key]-b[sort.key]),[langs,sort]);
+      const toggle = k => setSort(s=>({key:k,dir:s.key===k&&s.dir==="desc"?"asc":"desc"}));
+      const arrow = k => sort.key===k?(sort.dir==="desc"?" ↓":" ↑"):" ·";
+      return (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 uppercase text-left">
+                {[{k:null,l:"언어"},{k:"totalSpeakers",l:"총 화자"},{k:"nativeSpeakers",l:"원어민"},{k:"officialCountries",l:"공식 국가"},{k:"totalCountries",l:"사용 국가"}].map(col=>(
+                  <th key={col.l} onClick={()=>col.k&&toggle(col.k)}
+                    className={`px-3 py-2 font-semibold ${col.k?"cursor-pointer hover:text-gray-700":""}`}>
+                    {col.l}{col.k?arrow(col.k):""}
+                  </th>
+                ))}
+                <th className="px-3 py-2 font-semibold">주요 리전</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(lang=>(
+                <tr key={lang.id} onClick={()=>onSelect(lang.id)}
+                  className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                  style={{background:selected===lang.id?`${lang.color}08`:undefined}}>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background:lang.color}}/>
+                      <div>
+                        <div className="font-semibold text-gray-800">{lang.name}</div>
+                        <div className="text-gray-400">{lang.nativeName}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 font-bold text-gray-700">{lang.totalSpeakers}M+</td>
+                  <td className="px-3 py-2 text-gray-600">{lang.nativeSpeakers}M</td>
+                  <td className="px-3 py-2 text-gray-600">{lang.officialCountries}</td>
+                  <td className="px-3 py-2 text-gray-600">{lang.totalCountries}+</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {lang.regions.slice(0,2).map(r=>(
+                        <span key={r} className="text-xs px-1.5 py-0.5 rounded-full text-white" style={{background:REGION_COLORS[r]||"#9CA3AF"}}>{r}</span>
+                      ))}
+                      {lang.regions.length>2&&<span className="text-gray-400">+{lang.regions.length-2}</span>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    function App() {
+      const [view, setView] = useState("table");
+      const [selected, setSelected] = useState("en");
+      const selectedLang = LANGUAGES.find(l=>l.id===selected);
+      return (
+        <div className="min-h-screen bg-gray-50 p-4 font-sans">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-5">
+              <h1 className="text-2xl font-bold text-gray-900">🌐 리전별 언어 사용현황 데이터베이스</h1>
+              <p className="text-sm text-gray-500 mt-1">주요 12개 언어 · Ethnologue(SIL), Instituto Cervantes, OIF, IBGE, GUS, TÜİK 등 공신력 있는 기관 자료 기반 · 2024–2025 최신</p>
+            </div>
+            <div className="flex gap-2 mb-4">
+              {[{id:"table",label:"📊 요약 테이블"},{id:"cards",label:"🃏 카드 + 상세 보기"}].map(v=>(
+                <button key={v.id} onClick={()=>setView(v.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${view===v.id?"bg-gray-900 text-white":"bg-white text-gray-600 border border-gray-200 hover:border-gray-400"}`}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            {view==="table"&&(
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 text-xs text-gray-500">헤더 클릭 시 정렬 · 행 클릭 시 카드 보기로 이동</div>
+                <SummaryTable langs={LANGUAGES} onSelect={id=>{setSelected(id);setView("cards");}} selected={selected}/>
+                <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">단위: M = 백만 명 · 원어민(L1) + 유의미한 제2언어(L2) 화자 포함 기준</div>
+              </div>
+            )}
+            {view==="cards"&&(
+              <div className="flex gap-4" style={{height:"75vh"}}>
+                <div className="w-72 flex-shrink-0 overflow-y-auto pr-1 space-y-2">
+                  {LANGUAGES.map(lang=><LanguageCard key={lang.id} lang={lang} onClick={setSelected} selected={selected===lang.id}/>)}
+                </div>
+                <div className="flex-1 bg-white rounded-2xl border border-gray-200 p-5 overflow-hidden">
+                  <DetailPanel lang={selectedLang}/>
+                </div>
+              </div>
+            )}
+            <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4">
+              <div className="text-xs font-semibold text-gray-500 mb-3">📌 주요 데이터 출처</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                {[["Ethnologue (SIL International)","영어·중국어·독일어 외 다수","27판, 2024"],["Instituto Cervantes","스페인어","Anuario 2024·2025"],["OIF","프랑스어","La langue française 2022"],["IBGE (브라질 통계청)","포르투갈어","Censo 2022"],["GUS (폴란드 통계청)","폴란드어","인구조사 2021"],["TÜİK (튀르키예 통계청)","터키어","2023 추계"],["일본 총무성 통계국","일본어","인구 추계 2024"],["Arab League / CAPMAS","아랍어","2023"]].map(([src,langs,period])=>(
+                  <div key={src} className="bg-gray-50 rounded-lg p-2">
+                    <div className="font-semibold text-gray-700">{src}</div>
+                    <div className="text-gray-500">{langs} · <span className="text-blue-500">{period}</span></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
